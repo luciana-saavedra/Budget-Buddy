@@ -574,7 +574,7 @@ void reporte_por_semana(const vector<Gasto>& gastos) {
 
     cout << "\nREPORTE POR SEMANA\n";
     cout << "======================================================\n";
-    cout << left << setw(10) << "Año"
+    cout << left << setw(10) << "Ano"
          << setw(10) << "Semana"
          << setw(12) << "Total"
          << "Porcentaje\n";
