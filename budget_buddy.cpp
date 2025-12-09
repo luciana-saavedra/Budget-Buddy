@@ -450,7 +450,7 @@ void reporte_por_categoria(const vector<Gasto>& gastos) {
              << fixed << setprecision(2) << porcentaje << " %\n";
     }
     cout << "\nTotal de la categoria: " << fixed << setprecision(2) << total_general << "\n";
-}
+}  
 
 // ---------------------------------
 
