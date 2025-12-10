@@ -11,6 +11,7 @@
 # include <algorithm>
 # include <cstdlib>
 # include <cctype>
+
 # include <map>
 # include <cmath>
 # include <string>
@@ -18,6 +19,7 @@
 
 using namespace std;
 const string nombre_archivo = "gastos.csv";
+
 const string archivo_presupuestos = "presupuestos.csv";
 char MES_ACTIVO[8] = "";
 double presupuesto_mes = 0.0;
@@ -30,6 +32,7 @@ struct Gasto {
     char fecha[12];
     char descripcion[50];
 };
+
 //
 struct PresupuestoMes {
     char mes[8];   
@@ -38,6 +41,7 @@ struct PresupuestoMes {
 
 // ----------------------- FUNCIONES BASICAS --------------------
 
+// ----------------------- FUNCIONES BASICAS --------------------
 void pausa() {
     system("pause");
 }
@@ -45,6 +49,7 @@ void pausa() {
 void borrar_pantalla() {
     system("cls");
 }
+
 //
 void limpiar_buffer() {
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -115,6 +120,7 @@ void guardar_csv(const vector<Gasto>& gastos) {
         return;
     }
     // ---------------------------------
+    archivo <<"\nEJEMPLO: monto,categoria,fecha,descripcion\n";
     archivo <<"\nmonto,categoria,fecha,descripcion\n";
     // ---------------------------------
     for (const auto& g : gastos) {
@@ -127,6 +133,21 @@ void guardar_csv(const vector<Gasto>& gastos) {
     archivo.close();
 }
 
+// ---------------- FUNCION VALIDAR FECHA -----------------
+
+bool validar_fecha(const char fecha[]) {
+    if (strlen(fecha)!=10)
+        return false;
+    if (fecha[2]!='/' || fecha[5]!='/')
+        return false;
+    for (int i=0 ; i<10 ; ++i) {
+        if (i==2 || i==5)
+            continue;
+        if (!isdigit(static_cast<unsigned char>(fecha[i])))
+            return false;
+    }
+    int dia=(fecha[0] - '0') * 10 + (fecha[1] - '0');
+    int mes=(fecha[3] - '0') * 10 + (fecha[4] - '0');
 // --------------------------------------------------------
 
 void cargar_presupuestos( vector<PresupuestoMes>& presupuesto) {
@@ -295,6 +316,7 @@ void configurar_presupuesto_mes(vector<PresupuestoMes>& presupuesto) {
 
 
 void registrar_gasto(vector<Gasto>& gastos) {
+    limpiar_buffer();
     Gasto g;
     // ---------------------------------
     cout << "Monto: ";
@@ -363,6 +385,7 @@ void registrar_gasto(vector<Gasto>& gastos) {
     
     // ---------------------------------
     gastos.push_back(g);
+    guardarCSV(gastos);
     guardar_csv(gastos);
     cout<<"\nGasto registrado exitosamente.\n";
 }
@@ -436,6 +459,7 @@ void eliminar_gasto(vector<Gasto>& gastos) {
     }
     // ---------------------------------
     mostrar_gastos(gastos);
+    borrar_pantalla();
     // ---------------------------------
     cout << "\nIngrese el indice del gasto a eliminar: ";
     size_t indice;
@@ -450,6 +474,7 @@ void eliminar_gasto(vector<Gasto>& gastos) {
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     // ---------------------------------
     gastos.erase(gastos.begin()+indice);
+    guardarCSV(gastos);
     guardar_csv(gastos);
     // ---------------------------------
     cout<<"\nGasto eliminado.\n";
@@ -724,6 +749,9 @@ void reporte_por_categoria(const vector<Gasto>& gastos) {
              << fixed << setprecision(2) << porcentaje << " %\n";
     }
     cout << "\nTotal de la categoria: " << fixed << setprecision(2) << total_general << "\n";
+}  
+
+// ---------------------------------
 }
 
 void reporte_por_mes(const vector<Gasto>& gastos) {
@@ -733,6 +761,7 @@ void reporte_por_mes(const vector<Gasto>& gastos) {
         pausa();
         return;
     }
+
     const int MAX_MESES = 200;
     char meses[MAX_MESES][8]; 
     double totales_mes[MAX_MESES];
@@ -768,6 +797,7 @@ void reporte_por_mes(const vector<Gasto>& gastos) {
     for (size_t i = 0; i < gastos.size(); ++i) {
         total_general += gastos[i].monto;
     }
+    cout << "\nREPORTE POR MES\n";
     cout << "\nREPORTE POR MES (mm/aaaa)\n";
     cout << "===========================================================\n";
     cout << left << setw(10) << "Mes"
@@ -781,6 +811,14 @@ void reporte_por_mes(const vector<Gasto>& gastos) {
     cout << "\nTotal general: " << fixed << setprecision(2) << total_general << "\n";
 }
 
+void reporte_por_dia(const vector<Gasto>& gastos) {
+    borrar_pantalla();
+    if (gastos.empty()) {
+        cout << "\nNo hay datos para generar el reporte por día.\n";
+        pausa();
+        return;
+    }
+    
 
 void reporte_por_dia(const vector<Gasto>& gastos) {
     borrar_pantalla();
@@ -796,6 +834,10 @@ void reporte_por_dia(const vector<Gasto>& gastos) {
     char dias[MAX_DIAS][12]; 
     double totales[MAX_DIAS] = {0}; 
     int num_dias = 0; 
+    for (size_t i = 0; i < gastos.size(); ++i) {
+        bool encontrado = false;
+        int pos = -1;
+
     double total_general_mes = 0.0;
     for (size_t i = 0; i < gastos.size(); ++i) {
         if (strncmp(gastos[i].fecha + 3, MES_ACTIVO, 7) != 0)
@@ -810,6 +852,7 @@ void reporte_por_dia(const vector<Gasto>& gastos) {
                 break;
             }
         }
+        
         if (encontrado) {
             totales[pos] += gastos[i].monto;
         } else {
@@ -818,11 +861,18 @@ void reporte_por_dia(const vector<Gasto>& gastos) {
                 totales[num_dias] = gastos[i].monto;
                 num_dias++;
             } else {
+                cout << "\nSe alcanzó el máximo de días en el reporte.\n";
                 cout << "\nSe alcanzo el maximo de dias en el reporte.\n";
                 break;
             }
         }
     }
+    double total_general = 0.0;
+    for (size_t i = 0; i < gastos.size(); ++i) {
+        total_general += gastos[i].monto;
+    }
+    
+    cout << "\nREPORTE POR DÍA\n";
     if (total_general_mes == 0.0) {
         cout << "\nNo hay gastos en el mes " << MES_ACTIVO << " para reportar por dia.\n";
         return;
@@ -833,12 +883,45 @@ void reporte_por_dia(const vector<Gasto>& gastos) {
          << setw(12) << "Total"
          << "Porcentaje\n";
     cout << "------------------------------------------------------\n";
+    
+    for (int i = 0; i < num_dias; ++i) {
+        double porcentaje = (totales[i] / total_general) * 100.0;
     for (int i = 0; i < num_dias; ++i) {
         double porcentaje = (totales[i] / total_general_mes) * 100.0;
         cout << left << setw(15) << dias[i]
              << setw(12) << fixed << setprecision(2) << totales[i]
              << fixed << setprecision(2) << porcentaje << " %\n";
     }
+    
+    cout << "\nTotal general: " << fixed << setprecision(2) << total_general << "\n";
+    cout << "Días con gastos registrados: " << num_dias << "\n";
+}
+
+void reporte_por_semana(const vector<Gasto>& gastos) {
+    borrar_pantalla();
+    if (gastos.empty()) {
+        cout << "\nNo hay datos para generar el reporte por semana.\n";
+        pausa();
+        return;
+    }
+    
+    auto extraer_fecha = [](const char fecha[], int& dia, int& mes, int& ano) {
+
+        dia = (fecha[0] - '0') * 10 + (fecha[1] - '0');
+        mes = (fecha[3] - '0') * 10 + (fecha[4] - '0');
+        ano = (fecha[6] - '0') * 1000 + 
+               (fecha[7] - '0') * 100 + 
+               (fecha[8] - '0') * 10 + 
+               (fecha[9] - '0');
+    };
+    
+    auto dia_juliano = [](int dia, int mes, int ano) {
+        int dias_mes[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+        
+        if ((ano % 4 == 0 && ano % 100 != 0) || (ano % 400 == 0)) {
+            dias_mes[1] = 29;
+        }
+        
     cout << "\nTotal del mes: " << fixed << setprecision(2) << total_general_mes << "\n";
     cout << "Dias con gastos registrados en el mes: " << num_dias << "\n";
 }
@@ -875,12 +958,24 @@ void reporte_por_semana(const vector<Gasto>& gastos) {
         total += dia;
         return total;
     };
+    
     const int MAX_SEMANAS = 53; 
     struct SemanaInfo {
         int ano;
         int numero_semana;
         double total;
     };
+    
+    SemanaInfo semanas[MAX_SEMANAS];
+    int num_semanas = 0;
+    
+    for (size_t i = 0; i < gastos.size(); ++i) {
+        int dia, mes, ano;
+        extraer_fecha(gastos[i].fecha, dia, mes, ano);
+        
+        int dia_del_ano = dia_juliano(dia, mes, ano);
+        int numero_semana = (dia_del_ano - 1) / 7 + 1;
+
     SemanaInfo semanas[MAX_SEMANAS];
     int num_semanas = 0;
     double total_general_mes = 0.0;
@@ -901,6 +996,7 @@ void reporte_por_semana(const vector<Gasto>& gastos) {
                 break;
             }
         }
+        
         if (encontrada) {
             semanas[pos].total += gastos[i].monto;
         } else {
@@ -910,11 +1006,19 @@ void reporte_por_semana(const vector<Gasto>& gastos) {
                 semanas[num_semanas].total = gastos[i].monto;
                 num_semanas++;
             } else {
+                cout << "\nSe alcanzó el máximo de semanas en el reporte.\n";
                 cout << "\nSe alcanzo el maximo de semanas en el reporte.\n";
                 break;
             }
         }
     }
+    
+    double total_general = 0.0;
+    for (size_t i = 0; i < gastos.size(); ++i) {
+        total_general += gastos[i].monto;
+    }
+
+    cout << "\nREPORTE POR SEMANA\n";
     if (total_general_mes == 0.0) {
         cout << "\nNo hay gastos en el mes " << MES_ACTIVO << " para reportar por semana.\n";
         return;
@@ -928,12 +1032,17 @@ void reporte_por_semana(const vector<Gasto>& gastos) {
     cout << "------------------------------------------------------\n";
     
     for (int i = 0; i < num_semanas; ++i) {
+        double porcentaje = (semanas[i].total / total_general) * 100.0;
         double porcentaje = (semanas[i].total / total_general_mes) * 100.0;
         cout << left << setw(10) << semanas[i].ano
              << setw(10) << semanas[i].numero_semana
              << setw(12) << fixed << setprecision(2) << semanas[i].total
              << fixed << setprecision(2) << porcentaje << " %\n";
     }
+    
+    cout << "\nTotal general: " << fixed << setprecision(2) << total_general << "\n";
+    cout << "Semanas con gastos registrados: " << num_semanas << "\n";
+    cout << "\nNota: La semana 1 comienza el 1 de enero de cada año.\n";
     cout << "\nTotal del mes: " << fixed << setprecision(2) << total_general_mes << "\n";
     cout << "Semanas con gastos registrados en el mes: " << num_semanas << "\n";
     cout << "\nNota: La semana 1 comienza el 1 de enero de cada ano.\n";
@@ -1217,6 +1326,50 @@ void crear_grafico_off(const vector<Gasto>& gastos) {
 int main() {
     vector<Gasto> gastos;
     cargar_csv(gastos);
+    int opcion;
+    // ---------------------------------
+   
+    while (true) {
+        cout<< "\n Bienvenido a Budget Buddy, que desea hacer?\n";
+        cout<< "1. Registrar gasto\n";
+        cout<< "2. Mostrar gastos\n";
+        cout<< "3. Eliminar gastos\n";
+        cout<< "4. Reporte por categoria\n";
+        cout<< "5. Reporte por fecha\n";
+        cout<< "6. Reporte por mes\n";
+        cout<< "7. Reporte por dia\n";
+        cout<< "8. Reporte por semana\n";
+        cout<< "9. Salir\n";
+        cout<< "Seleccione una opcion: ";
+        cin>> opcion;
+        
+        // ---------------------------------
+        if (!cin) {
+            cin.clear();
+            limpiar_buffer();
+            cout << "\nOpcion no valida.\n";
+            continue;
+        }
+        // ---------------------------------
+        switch (opcion) {
+            case 1: registrar_gasto(gastos); pausa(); break;
+            case 2: mostrar_gastos(gastos); pausa(); break;
+            case 3: eliminar_gasto(gastos); pausa(); break;
+            case 4: reporte_por_categoria(gastos); pausa(); break;
+            case 5: reporte_por_fecha(gastos); pausa(); break;
+            case 6: reporte_por_mes(gastos); pausa(); break;
+            case 7: reporte_por_dia(gastos); pausa(); break;
+            case 8: reporte_por_semana(gastos); pausa(); break;
+            case 9:
+                cout<<"\nSaliendo del programa... Hasta pronto!\n";
+                pausa();
+                return 0;
+            default:
+                cout<<"\nOpcion no valida\n";
+        }
+        // ---------------------------------
+    }
+}
     vector<PresupuestoMes> presupuesto;
     cargar_presupuestos(presupuesto);
     // ---------------------------------
